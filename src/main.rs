@@ -3,8 +3,6 @@ use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
 use std::path::PathBuf;
-use std::prelude::rust_2021::FromIterator;
-use std::str::SplitWhitespace;
 use anyhow::Context;
 use regex::Regex;
 use structopt::StructOpt;
@@ -23,14 +21,18 @@ struct Cli {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    wcr()
+}
+
+fn wcr() -> Result<(), Box<dyn std::error::Error>> {
 
     let regex = Regex::new(r"[^A-Za-z0-9\s]").unwrap();
 
     let args: Cli = Cli::from_args();
 
-    let file: File = File::open(&args.path).with_context(|| format!("Could not read file `{}`", args.path.to_str().get_or_insert("") ))?;
+    let file: File = File::open(&args.path).with_context(|| format!("Could not read file `{}`", args.path.to_str().get_or_insert("")))?;
 
-    let reader: BufReader<Box<dyn Read>>  = BufReader::new(Box::new(file));
+    let reader: BufReader<Box<dyn Read>> = BufReader::new(Box::new(file));
 
     let mut word_counter: HashMap<String, i32> = HashMap::new();
 
@@ -42,16 +44,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let line_string = regex.replace_all(&line_string, " ");
 
-        let mut iter:Vec<&str> = line_string.split_whitespace().collect();
+        let iter: Vec<&str> = line_string.split_whitespace().collect();
 
         for word in iter {
             if let Some(val) = word_counter.get_mut(word) {
                 *val = *val + 1;
             } else {
-                word_counter.insert(word.parse::<String>().with_context(|| "Could not parse to from &str to String!")?, 1 );
+                word_counter.insert(word.parse::<String>().with_context(|| "Could not parse to from &str to String!")?, 1);
             }
         }
-
     }
 
     pretty_output(word_counter.iter().collect(), args.output);
@@ -69,7 +70,7 @@ fn pretty_output(counter_structure: Vec<(&String, &i32)>, output: Option<PathBuf
     }
 
     if let Some(path) = output {
-        fs::write(path, result);
+        fs::write(path, result).with_context(|| "Result could not be written to output file!");
     } else {
         print!("{}", result);
     }
